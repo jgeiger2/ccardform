@@ -55,7 +55,7 @@ findCardType = (cardNumber) => {
                 break;
             case 'expDate':
                 errorText = cardExpValidation(value);
-                this.setState((prevState) => ({error: {...prevState.error, cardExpError: errorText}}))
+                this.setState((prevState) => ({error: {...prevState.error, expError: errorText}}))
                 break;
             case 'cvvCode':
                 errorText = cvvCodeValidation(3, value);
@@ -66,26 +66,26 @@ findCardType = (cardNumber) => {
         };
     }
 
-    handleBlur = (e) => this.handleValidations(e.target.name, e.target.value)
+    handleBlur = ({target: {name, value}}) => this.handleValidations(name, value)
     
 
-    handleInputData = (e) => {
+    handleInputData = ({target: {name, value}}) => {
         
-        if (e.target.name === 'card') {
-            let mask = e.target.value.split(' ').join('');
+        if (name === 'card') {
+            let mask = value.split(' ').join('');
             if(mask.length) {
                 mask = mask.match(new RegExp('.{1,4}', 'g')).join(' ');
                 this.setState((prevState) => ({
                     cardData: {
                         ...prevState.cardData, 
-                        [e.target.name]: mask,
+                        [name]: mask,
                     },
                 }));
             } else {
                 this.setState((prevState) => ({
                     cardData: {
                         ...prevState.cardData, 
-                        [e.target.name]: '',
+                        [name]: '',
                     },
                 }));
                 }
@@ -93,7 +93,7 @@ findCardType = (cardNumber) => {
                 this.setState((prevState) => ({
                     cardData: {
                         ...prevState.cardData, 
-                        [e.target.name]: e.target.value
+                        [name]: value
                     },
                 }));
             }
@@ -102,17 +102,32 @@ findCardType = (cardNumber) => {
     
 
         checkErrorBeforeSave = () => {
+            const {cardData, error} = this.state
             let errorValue = {};
             let isError = false;
-            Object.keys(this.state.cardData).forEach((val) => {
-                if (!this.state.cardData[val].length) {
+            Object.keys(cardData).forEach((val) => {
+                if (!cardData[val].length) {
                     errorValue = {...errorValue, [`${val}Error`]: 'Required'}
                     isError = true
+                } else {
+                    Object.keys(error).forEach((val) => {
+                        if (error[val]) {
+                            isError = true
+                        }
+                    })
+                    this.setState({error: errorValue})
+                    Object.keys(cardData).forEach((val) => {
+                        if (cardData[val].length) {
+                            this.handleValidations(val, cardData[val])
                 }
             })
-            this.setState({error: errorValue})
             return isError
         }
+    })
+
+    this.setState({error: errorValue})
+    return isError
+}
 
         handleAddCard = (e) => {
             e.preventDefault()
@@ -127,6 +142,7 @@ findCardType = (cardNumber) => {
         }
     
     render() {
+        const {cardData, error, cardType, maxLength} = this.state
 
         const inputData = [
             { label: 'Card Number', name: 'card', type: 'text', error: 'cardError'},
@@ -143,20 +159,20 @@ findCardType = (cardNumber) => {
                 <InputBase
                 placeholder={item.label}
                 type={item.type}
-                value={this.state.cardData && this.state.cardData[item.name]}
+                value={cardData && cardData[item.name]}
                 onChange={this.handleInputData}
                 autoComplete='off'
-                maxLength={this.state.maxLength}
+                maxLength={maxLength}
                 name={item.name}
                 onBlur={this.handleBlur}
-                error={this.state.error}
-                cardType={this.state.cardType}
+                error={error}
+                cardType={cardType}
                 isCard={item.name === 'card'}
                 errorM={
-                   (this.state.error
-                    && this.state.error[item.error]
-                    && this.state.error[item.error].length > 1)
-                    ? this.state.error[item.error]
+                   (error
+                    && error[item.error]
+                    && error[item.error].length > 1)
+                    ? error[item.error]
                     : null
                 }
                 />
